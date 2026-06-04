@@ -1,0 +1,5 @@
+node_modules/
+founder_results.json
+founder_job.json
+log.txt
+*.csv

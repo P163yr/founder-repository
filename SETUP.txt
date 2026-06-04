@@ -1,0 +1,61 @@
+FOUNDER EXTRACTOR — setup (runs on the SAME pod as SearXNG)
+===========================================================
+
+PREREQUISITE: SearXNG is already running on this pod and answering JSON at
+http://localhost:8890  (test: curl "http://localhost:8890/search?q=test&format=json")
+
+------------------------------------------------------------
+OPTION A — plain Node (simplest, matches how you run the pricing tool)
+------------------------------------------------------------
+1) Put this folder on the pod under the persistent volume, e.g. /workspace/founder-extractor
+   (clone your repo, or upload these files).
+
+2) Install once:
+   cd /workspace/founder-extractor
+   npm install
+   npx playwright install chromium
+   # (npm install also triggers this via "postinstall", so the second line is a safety net)
+
+3) Run it detached so it survives your laptop disconnecting:
+   cd /workspace/founder-extractor && nohup node server.js > log.txt 2>&1 &
+
+4) Watch it come up, then Ctrl+C to stop watching (server keeps running):
+   tail -f log.txt
+   # look for: "Founder Extractor ready on port 8080"
+
+5) Open the dashboard via RunPod: Connect -> HTTP Service [Port 8080].
+   (Expose port 8080 on the pod if you haven't.)
+
+To restart after a code change (git pull):
+   pkill -9 -f "node server.js"; sleep 1
+   cd /workspace/founder-extractor && git pull && nohup node server.js > log.txt 2>&1 &
+
+------------------------------------------------------------
+OPTION B — Docker (only if your pod has docker)
+------------------------------------------------------------
+   cd /workspace/founder-extractor
+   docker build -t founder-extractor .
+   docker run -d --name founder --network host \
+     -v /workspace/founder-data:/workspace founder-extractor
+   # --network host lets the container reach SearXNG on localhost:8890.
+   # Data persists in /workspace/founder-data on the pod.
+
+------------------------------------------------------------
+IMPORTANT — keep SearXNG running
+------------------------------------------------------------
+This tool calls SearXNG for every startup. If the pod restarts, start SearXNG FIRST:
+   cd /workspace/searxng && . venv/bin/activate \
+     && export SEARXNG_SETTINGS_PATH="/workspace/searxng-config/settings.yml" \
+     && nohup python searx/webapp.py > /workspace/searxng.log 2>&1 &
+Then start this tool (Option A step 3).
+
+------------------------------------------------------------
+USING IT
+------------------------------------------------------------
+- API key: your nvapi-... key
+- Model:   deepseek-ai/deepseek-v4-flash   (or gpt-oss-120b on Cerebras, etc.)
+- Endpoint: https://integrate.api.nvidia.com/v1/chat/completions
+- SearXNG URL: http://localhost:8890  (already the default)
+- Input: paste handles, or "name, website, handle" per line.
+- Keep "Handles at once" = 2  (gentle on the search engines).
+- Download CSV when done. Resume is on by default.

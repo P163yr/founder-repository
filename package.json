@@ -1,0 +1,16 @@
+{
+  "name": "founder-extractor",
+  "version": "1.0.0",
+  "description": "Search-first founder data extractor (SearXNG + LLM) with web dashboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
